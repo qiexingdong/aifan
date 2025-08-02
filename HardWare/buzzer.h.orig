@@ -1,0 +1,19 @@
+#ifndef __BUZZER_H__
+#define __BUZZER_H__
+
+#include "main.h"
+#include "tim.h"
+
+enum WEEK{
+		MON=1,TUE=2,WED=3,THU=4,FRI=5,SAT=6,SUN=7
+		} week;
+//结构体
+typedef struct {
+    uint8_t Buzzer;      // 蜂鸣器状态标志
+} BuzzerStatus;
+extern volatile BuzzerStatus cdt; // volatile保证多环境访问安全
+
+void Buzzer_ON(void);
+void Buzzer_OFF(void);
+
+#endif

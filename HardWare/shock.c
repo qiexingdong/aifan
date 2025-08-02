@@ -1,0 +1,37 @@
+#include "shock.h"
+
+volatile MotorStatus mot;
+
+/**
+  * 函    数：马达初始化
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：无
+  */
+void Motor_Init(void) {
+    HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_3);
+    mot.Motor = 0;
+    __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_3,0);
+}
+
+/**
+  * 函    数：马达开启震动
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：无
+  */
+void Motor_ON(void) {
+    mot.Motor = 1;
+    __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_3,100);
+}
+
+/**
+  * 函    数：马达关闭震动
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：无
+  */
+void Motor_OFF(void) {
+    mot.Motor = 0;
+    __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_3,0);
+}

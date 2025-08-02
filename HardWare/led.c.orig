@@ -1,0 +1,24 @@
+#include "led.h"
+
+/**
+  * 函    数：PC13置0
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：无
+  */
+void LED_PC13_On(void) {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+}
+/**
+  * 函    数：PC13置1
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：无
+  */
+void LED_PC13_Off(void) {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+}
+
+void LED_PC13_Reverse(void){
+HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+}

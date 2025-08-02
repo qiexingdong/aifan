@@ -1,0 +1,82 @@
+#include "SIM900A.h"
+
+/**
+  * 函    数：发送短信
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：发送短信的AT指令如下
+			AT+CMGF=1
+			AT+CSCS="GSM"
+			AT+CSCA?
+			AT+CSMP=17,167,0,0
+			AT+CMGS="13365113887"
+			sos
+			1A（16进制）
+*/
+char at_buffer[AT_BUFFER_SIZE];
+char English_message[]= {"sos help!"};                            //英文短信内容
+char phonenumber[]= {"19702208120"};                            //接受短信的号码
+// 定义USART句柄和缓冲区
+uint8_t ctrlZ = 0x1A;  // Ctrl+Z的十六进制表示
+volatile CountDelay cd;
+
+// 定义足够大的缓冲区来存储格式化后的消息
+char message_buffer[100];
+// 安全的AT指令格式化函数
+void Send_Formatted_AT(UART_HandleTypeDef *huart, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vsnprintf(at_buffer, AT_BUFFER_SIZE, format, args);  // 安全格式化
+    va_end(args);
+    
+    HAL_UART_Transmit(huart, (uint8_t*)at_buffer, strlen(at_buffer), 100);  // 发送指令
+    HAL_UART_Transmit(huart, (uint8_t*)"\r\n", 2, 100);                     // 添加回车换行
+    HAL_Delay(30);  // 基础延时（实际需根据模块响应优化）
+}
+
+// 发送短信函数（参数化）
+void SIM900A_Send_English_Message(const char *number, const char *message) {
+    // 1. 设置短信为文本模式
+    Send_Formatted_AT(&huart1, "AT+CMGF=1");
+    
+    // 2. 设置字符集为GSM
+    Send_Formatted_AT(&huart1, "AT+CSCS=\"GSM\"");
+    
+    // 3. 设置短信参数（可选）
+    Send_Formatted_AT(&huart1, "AT+CSMP=17,167,0,0");
+    
+    // 4. 指定接收号码（动态插入变量）
+    Send_Formatted_AT(&huart1, "AT+CMGS=\"%s\"", number);  // 格式化号码
+    
+    // 5. 等待模块返回 "> " 提示符（需实际检测）
+    HAL_Delay(30);
+    
+    // 6. 发送短信内容
+    HAL_UART_Transmit(&huart1, (uint8_t*)message, strlen(message), 100);
+    
+    // 7. 发送Ctrl+Z结束符
+    HAL_UART_Transmit(&huart1, &ctrlZ, 1, 100);
+}
+
+
+// 在需要发送短信的地方，例如某个触发函数中
+void TriggerEmergencySMS(void) {
+    // 确保处理最新的GPS数据
+    if (Save_Data.isGetData) {
+        parseGpsBuffer();
+    }
+    
+    // 检查GPS数据是否有效
+    if (Save_Data.isUsefull) {
+        // 格式化经纬度信息到消息缓冲区
+        snprintf(message_buffer, sizeof(message_buffer), "sos help! 纬度:%.3f, 经度:%.3f",
+                 g_LatAndLongData.latitude,
+                g_LatAndLongData.longitude);
+    } else {
+        // 无效数据时的默认消息
+        strncpy(message_buffer, "sos help! Location unavailable", sizeof(message_buffer));
+    }
+    
+    // 调用短信发送函数
+    SIM900A_Send_English_Message(phonenumber, message_buffer);
+}

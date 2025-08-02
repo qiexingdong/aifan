@@ -1,0 +1,97 @@
+#include "text.h"
+
+
+
+/*SIM900A短信内容和号码*/
+char English_message[]={"sos help!"};                             //英文短信内容
+char phonenumber[]={"19702208120"};                             //接受短信的号码
+
+
+void UART_SendATCommand(UART_HandleTypeDef *huart, char *command)
+{
+  HAL_UART_Transmit(huart, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
+ 	HAL_UART_Transmit(huart, (uint8_t *)"\r\n", 2, HAL_MAX_DELAY);
+}
+
+void UART_WaitForResponse(UART_HandleTypeDef *huart, char *response)
+{
+  uint8_t buffer[64];
+  uint32_t startTick = HAL_GetTick();
+  while(1) {
+    uint32_t currentTime = HAL_GetTick();
+    if(HAL_UART_Receive(huart, buffer, sizeof(buffer), 50) == HAL_OK) {
+      if(strstr((char *)buffer, response) != NULL) {
+        break; // Found response
+      }
+    }
+    if((currentTime - startTick) > 1000) { // Timeout condition
+      break;
+    }
+  }
+}
+
+/**
+  * 函    数：发送短信
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：发送短信的AT指令如下
+			AT+CMGF=1
+			AT+CSCS="GSM"
+			AT+CSCA?
+			AT+CSMP=17,167,0,0
+			AT+CMGS="13365113887"
+			sos
+			1A（16进制）
+  */
+void SIM900A_SendText(void) {
+
+
+}
+
+/**************************************************************************/
+//函数作用：发送英文短信函数
+//函数名称：sim900a_send_English_message(char *message,char *phonenumber)(uint8_t number);
+//内部参数：message phonenumber
+//修改日期：2022年1月26日  凌晨2：40、
+//作者：       (CSDN搜)大屁桃
+/**************************************************************************/
+void sim900a_send_English_message(char *message,char *phonenumber)
+{
+ 
+	Usart_SendString2(USART3,"AT\r\n");                            //SIM900A是否与单片机来连接成功
+	delay_ms(200);	
+	while(Find_char((char*)Usart3_buff,"OK"));                      
+	printf("English_message_OK1\r\n");
+	
+	Usart_SendString2(USART3,"AT&F\r\n");                           //SIM900A复位
+	delay_ms(200);	
+	while(Find_char((char*)Usart3_buff,"OK"));                     //字符串匹对函数   
+	printf("English_message_OK2\r\n");	
+	
+	Usart_SendString2(USART3,"AT+CSCS=\"GSM\"\r\n");               //英文短信指令1
+	delay_ms(200);	
+	while(Find_char((char*)Usart3_buff,"OK"));                     
+	printf("English_message_OK3\r\n");
+	
+	
+	Usart_SendString2(USART3,"AT+CMGF=1\r\n");                     //英文短信指令2
+	delay_ms(200);	
+	while(Find_char((char*)Usart3_buff,"OK"));  
+	printf("English_message_OK4\r\n");
+	
+	sprintf(dispbuf,"AT+CMGS=\"%s\"\r\n",phonenumber);
+	Usart_SendString2(USART3,dispbuf);                             //英文短信指令3
+	delay_ms(200);
+	while(Find_char((char*)Usart3_buff,"OK")); 
+	printf("English_message_OK5\r\n");
+	
+	Usart_SendString2(USART3,message);                              //英文短信指令4
+	delay_ms(200);
+	while(Find_char((char*)Usart3_buff,"OK"));  
+	printf("English_message_OK6\r\n");
+	
+	Usart_SendHalfWord(USART3,0x1a);                                //结束指令
+	delay_ms(2000);  //延时两秒
+	while(Find_char((char*)Usart3_buff,"OK"));  
+	printf("English_message_OK7\r\n");
+}
