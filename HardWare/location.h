@@ -1,6 +1,0 @@
-#ifndef __LOCATION_H__
-#define __LOCATION_H__
-
-#include "main.h"
-
-#endif
